@@ -20,7 +20,9 @@
   <option value="tagora.txt">TAGORA</option>
 </select>
 
-<button onclick="loadClass()">Charger classe</button>
+<button onclick="loadClass()">Charger classe (depuis fichiers projet)</button>
+<input type="file" id="fileInput" accept=".txt">
+<button onclick="loadFromFile()">Charger fichier TXT</button>
 <button onclick="tirageCouleurs()">Séance 1 : Couleurs</button>
 <button onclick="tirageLettres()">Séance 2 : Lettres</button>
 
@@ -89,10 +91,33 @@ function loadClass(){
   fetch(document.getElementById("classSelect").value)
   .then(r=>r.text())
   .then(t=>{
-    eleves = t.split("\n").map(e=>e.trim()).filter(e=>e).slice(0,20);
+    eleves = t.split("
+").map(e=>e.trim()).filter(e=>e).slice(0,20);
     segments=[...eleves];
     drawWheel();
   });
+}
+
+// Chargement depuis fichier local
+function loadFromFile(){
+  const file = document.getElementById("fileInput").files[0];
+  if(!file){
+    alert("Sélectionne un fichier TXT");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+    let text = e.target.result;
+    eleves = text.split("
+").map(e=>e.trim()).filter(e=>e).slice(0,20);
+    segments=[...eleves];
+    drawWheel();
+  };
+
+  reader.readAsText(file);
+});
 }
 
 // Mélange
