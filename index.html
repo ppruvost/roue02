@@ -5,8 +5,8 @@
   <title>Roue - Groupes pédagogiques</title>
   <style>
     body {font-family: Arial; text-align:center; background:#f5f5f5;}
-    canvas {margin-top:20px;}
-    select, button {margin:5px; padding:10px; font-size:14px;}
+    canvas {margin-top:20px; border:1px solid #ccc;}
+    select, button, input {margin:5px; padding:10px; font-size:14px;}
   </style>
 </head>
 <body>
@@ -20,9 +20,11 @@
   <option value="tagora.txt">TAGORA</option>
 </select>
 
-<button onclick="loadClass()">Charger classe (depuis fichiers projet)</button>
+<button onclick="loadClass()">Charger classe (GitHub)</button>
 <input type="file" id="fileInput" accept=".txt">
 <button onclick="loadFromFile()">Charger fichier TXT</button>
+
+<br>
 <button onclick="tirageCouleurs()">Séance 1 : Couleurs</button>
 <button onclick="tirageLettres()">Séance 2 : Lettres</button>
 
@@ -30,7 +32,8 @@
 <button onclick="spin()">Tourner</button>
 
 <script>
-const ctx = document.getElementById("wheel").getContext("2d");
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
 
 let eleves = [];
 let segments = [];
@@ -45,8 +48,15 @@ let startAngle = 0;
 let arc = 0;
 
 function drawWheel() {
-  if (segments.length === 0) return;
   ctx.clearRect(0,0,400,400);
+
+  if (segments.length === 0) {
+    ctx.fillStyle = "#999";
+    ctx.font = "16px Arial";
+    ctx.fillText("Charge une classe pour afficher la roue", 40, 200);
+    return;
+  }
+
   arc = Math.PI*2/segments.length;
 
   segments.forEach((s,i)=>{
@@ -66,6 +76,7 @@ function drawWheel() {
     ctx.restore();
   });
 
+  // flèche
   ctx.beginPath();
   ctx.moveTo(190,10);
   ctx.lineTo(210,10);
@@ -75,6 +86,7 @@ function drawWheel() {
 
 function spin(){
   if(segments.length===0){alert("Charge une liste");return;}
+
   let spins = Math.random()*3000+3000;
   let start = Date.now();
 
@@ -89,16 +101,21 @@ function spin(){
 
 function loadClass(){
   fetch(document.getElementById("classSelect").value)
-  .then(r=>r.text())
+  .then(r=>{
+    if(!r.ok) throw new Error("Fichier introuvable");
+    return r.text();
+  })
   .then(t=>{
-    eleves = t.split("
-").map(e=>e.trim()).filter(e=>e).slice(0,20);
+    eleves = t.split("\n").map(e=>e.trim()).filter(e=>e).slice(0,20);
     segments=[...eleves];
+    startAngle = 0;
     drawWheel();
+  })
+  .catch(err=>{
+    alert("Erreur : "+err.message);
   });
 }
 
-// Chargement depuis fichier local
 function loadFromFile(){
   const file = document.getElementById("fileInput").files[0];
   if(!file){
@@ -110,17 +127,15 @@ function loadFromFile(){
 
   reader.onload = function(e){
     let text = e.target.result;
-    eleves = text.split("
-").map(e=>e.trim()).filter(e=>e).slice(0,20);
+    eleves = text.split("\n").map(e=>e.trim()).filter(e=>e).slice(0,20);
     segments=[...eleves];
+    startAngle = 0;
     drawWheel();
   };
 
   reader.readAsText(file);
-});
 }
 
-// Mélange
 function shuffle(array){
   for(let i=array.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
@@ -129,8 +144,9 @@ function shuffle(array){
   return array;
 }
 
-// Séance 1 : répartition en 5 couleurs
 function tirageCouleurs(){
+  if(eleves.length===0){alert("Charge une classe");return;}
+
   let melange = shuffle([...eleves]);
   groupesCouleurs = {0:[],1:[],2:[],3:[],4:[]};
 
@@ -139,10 +155,9 @@ function tirageCouleurs(){
   });
 
   console.log("Groupes couleurs",groupesCouleurs);
-  alert("Groupes couleurs créés (voir console)");
+  alert("Groupes couleurs créés (F12 pour voir)");
 }
 
-// Séance 2 : mélange par lettres
 function tirageLettres(){
   groupesFinal = {A:[],B:[],C:[],D:[]};
 
@@ -155,11 +170,13 @@ function tirageLettres(){
   });
 
   console.log("Groupes finaux",groupesFinal);
-  alert("Groupes finaux créés (voir console)");
+  alert("Groupes finaux créés (F12 pour voir)");
 }
+
+// affichage initial
+drawWheel();
 
 </script>
 
 </body>
 </html>
-
