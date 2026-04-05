@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Roue - Groupes pédagogiques</title>
+  <style>
+    body {font-family: Arial; text-align:center; background:#f5f5f5;}
+    canvas {margin-top:20px;}
+    select, button {margin:5px; padding:10px; font-size:14px;}
+  </style>
+</head>
+<body>
+
+<h2>Création de groupes (tirage sans remise)</h2>
+
+<select id="classSelect">
+  <option value="2remi.txt">2REMI</option>
+  <option value="1log.txt">1LOG</option>
+  <option value="1mcc.txt">1MCC</option>
+  <option value="tagora.txt">TAGORA</option>
+</select>
+
+<button onclick="loadClass()">Charger classe</button>
+<button onclick="tirageCouleurs()">Séance 1 : Couleurs</button>
+<button onclick="tirageLettres()">Séance 2 : Lettres</button>
+
+<canvas id="wheel" width="400" height="400"></canvas>
+<button onclick="spin()">Tourner</button>
+
+<script>
+const ctx = document.getElementById("wheel").getContext("2d");
+
+let eleves = [];
+let segments = [];
+
+const couleurs = ["#3498db","#f1c40f","#2ecc71","#9b59b6","#f39c12"];
+const lettres = ["A","B","C","D"];
+
+let groupesCouleurs = {};
+let groupesFinal = {};
+
+let startAngle = 0;
+let arc = 0;
+
+function drawWheel() {
+  if (segments.length === 0) return;
+  ctx.clearRect(0,0,400,400);
+  arc = Math.PI*2/segments.length;
+
+  segments.forEach((s,i)=>{
+    let angle = startAngle + i*arc;
+    ctx.beginPath();
+    ctx.fillStyle = couleurs[i % couleurs.length];
+    ctx.moveTo(200,200);
+    ctx.arc(200,200,200,angle,angle+arc);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(200,200);
+    ctx.rotate(angle+arc/2);
+    ctx.fillStyle="#000";
+    ctx.textAlign="right";
+    ctx.fillText(s,180,10);
+    ctx.restore();
+  });
+
+  ctx.beginPath();
+  ctx.moveTo(190,10);
+  ctx.lineTo(210,10);
+  ctx.lineTo(200,40);
+  ctx.fill();
+}
+
+function spin(){
+  if(segments.length===0){alert("Charge une liste");return;}
+  let spins = Math.random()*3000+3000;
+  let start = Date.now();
+
+  function rotate(){
+    let progress = Date.now()-start;
+    startAngle += 0.3;
+    drawWheel();
+    if(progress<spins) requestAnimationFrame(rotate);
+  }
+  rotate();
+}
+
+function loadClass(){
+  fetch(document.getElementById("classSelect").value)
+  .then(r=>r.text())
+  .then(t=>{
+    eleves = t.split("\n").map(e=>e.trim()).filter(e=>e).slice(0,20);
+    segments=[...eleves];
+    drawWheel();
+  });
+}
+
+// Mélange
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+  return array;
+}
+
+// Séance 1 : répartition en 5 couleurs
+function tirageCouleurs(){
+  let melange = shuffle([...eleves]);
+  groupesCouleurs = {0:[],1:[],2:[],3:[],4:[]};
+
+  melange.forEach((e,i)=>{
+    groupesCouleurs[i%5].push(e);
+  });
+
+  console.log("Groupes couleurs",groupesCouleurs);
+  alert("Groupes couleurs créés (voir console)");
+}
+
+// Séance 2 : mélange par lettres
+function tirageLettres(){
+  groupesFinal = {A:[],B:[],C:[],D:[]};
+
+  Object.values(groupesCouleurs).forEach(groupe=>{
+    let melange = shuffle([...groupe]);
+    melange.forEach((e,i)=>{
+      let lettre = lettres[i%4];
+      groupesFinal[lettre].push(e);
+    });
+  });
+
+  console.log("Groupes finaux",groupesFinal);
+  alert("Groupes finaux créés (voir console)");
+}
+
+</script>
+
+</body>
+</html>
+
